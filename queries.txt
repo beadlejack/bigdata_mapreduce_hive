@@ -1,0 +1,102 @@
+ ----------------
+-- CREATE TABLES
+----------------
+
+CREATE TABLE movies (movieid INT, title STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+with serdeproperties ("separatorChar" = ",", "quoteChar" = "\"")
+tblproperties("skip.header.line.count"="1");
+
+CREATE TABLE movies_large (movieid INT, title STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+with serdeproperties ("separatorChar" = ",", "quoteChar" = "\"")
+tblproperties("skip.header.line.count"="1");
+
+CREATE TABLE reviews (userid INT, movieid INT, rating FLOAT, timestamp BIGINT)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+with serdeproperties   ("separatorChar" = ",", "quoteChar" = "\"")
+tblproperties("skip.header.line.count"="1");
+
+CREATE TABLE reviews_large (userid INT, movieid INT, rating FLOAT, timestamp BIGINT)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+with serdeproperties ("separatorChar" = ",", "quoteChar" = "\"")
+tblproperties("skip.header.line.count"="1");
+
+
+----------------
+-- Load Datasets
+----------------
+
+load data local inpath "dataset/movies/movies.csv"
+overwrite into table imdb_bigdata17.movies;
+
+load data local inpath "dataset_large/movies/movies_large.csv"
+overwrite into table imdb_bigdata17.movies_large;
+
+load data local inpath "dataset/reviews/reviews.csv"
+overwrite into table imdb_bigdata17.reviews;
+
+load data local inpath "dataset_large/reviews/reviews_large.csv"
+overwrite into table imdb_bigdata17.reviews_large;
+
+
+----------------
+-- Small Dataset
+----------------
+
+-- Part 1
+---------
+
+SELECT COUNT(*) C, title
+FROM imdb_bigdata17.movies M, imdb_bigdata17.reviews R
+WHERE M.movieid = R.movieid
+GROUP BY M.title
+ORDER BY C ASC, title ASC;
+
+-- 9064 rows
+-- should be 9066
+
+
+
+-- Part 2
+---------
+
+SELECT title, AVG(rating) A, COUNT(*) reviews
+FROM imdb_bigdata17.movies M, imdb_bigdata17.reviews R
+WHERE M.movieid = R.movieid
+GROUP BY M.title
+HAVING A > 4 AND reviews > 10
+ORDER BY A ASC, title ASC;
+
+-- 287 rows
+
+
+
+----------------
+-- Large Dataset
+----------------
+
+-- Part 1
+---------
+
+SELECT COUNT(*) C, title
+FROM imdb_bigdata17.movies_large M, imdb_bigdata17.reviews_large R
+WHERE M.movieId = R.movieId
+GROUP BY M.title
+ORDER BY C ASC, title ASC;
+
+
+-- 45069 rows
+
+
+-- Part 2
+---------
+
+SELECT title, AVG(rating) A, COUNT(*) reviews
+FROM imdb_bigdata17.movies_large M, imdb_bigdata17.reviews_large R
+WHERE M.movieid = R.movieid
+GROUP BY M.title
+HAVING A > 4 AND reviews > 10
+ORDER BY A ASC, title ASC;
+
+-- 381 rows
